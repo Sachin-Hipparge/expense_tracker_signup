@@ -1,12 +1,15 @@
 const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const db = require("./utils/database");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+const JWT_SECRET = "expense_tracker_secret";
 
 
 // ==================== SIGNUP ====================
@@ -106,20 +109,60 @@ app.post("/user/login", (req, res) => {
                 });
             }
 
+            // Create JWT token
+            const token = jwt.sign(
+                { userId: user.id },
+                JWT_SECRET,
+                { expiresIn: "1h" }
+            );
+
             res.status(200).json({
                 message: "Login successful",
-                userId: user.id
+                token: token
             });
         });
     });
 });
 
 
+// ==================== AUTHENTICATION MIDDLEWARE ====================
+
+function authenticate(req, res, next) {
+
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+        return res.status(401).json({
+            message: "Authentication required"
+        });
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    try {
+
+        const decoded = jwt.verify(token, JWT_SECRET);
+
+        req.userId = decoded.userId;
+
+        next();
+
+    } catch (error) {
+
+        return res.status(401).json({
+            message: "Invalid or expired token"
+        });
+    }
+}
+
+
 // ==================== ADD EXPENSE ====================
 
-app.post("/expense/add", (req, res) => {
+app.post("/expense/add", authenticate, (req, res) => {
 
-    const { amount, description, category, userId } = req.body;
+    const { amount, description, category } = req.body;
+
+    const userId = req.userId;
 
     const sql = `
         INSERT INTO expenses
@@ -149,9 +192,9 @@ app.post("/expense/add", (req, res) => {
 
 // ==================== GET EXPENSES ====================
 
-app.get("/expense/all/:userId", (req, res) => {
+app.get("/expense/all", authenticate, (req, res) => {
 
-    const userId = req.params.userId;
+    const userId = req.userId;
 
     const sql = `
         SELECT *
@@ -176,29 +219,42 @@ app.get("/expense/all/:userId", (req, res) => {
 
 // ==================== DELETE EXPENSE ====================
 
-app.delete("/expense/delete/:id", (req, res) => {
+app.delete("/expense/delete/:id", authenticate, (req, res) => {
 
     const expenseId = req.params.id;
 
-    const sql = "DELETE FROM expenses WHERE id = ?";
+    const userId = req.userId;
 
-    db.execute(sql, [expenseId], (err, result) => {
+    const sql = `
+        DELETE FROM expenses
+        WHERE id = ? AND userId = ?
+    `;
 
-        if (err) {
-            console.log(err);
-            return res.status(500).json({
-                message: "Failed to delete expense"
+    db.execute(
+        sql,
+        [expenseId, userId],
+        (err, result) => {
+
+            if (err) {
+                console.log(err);
+                return res.status(500).json({
+                    message: "Failed to delete expense"
+                });
+            }
+
+            if (result.affectedRows === 0) {
+                return res.status(403).json({
+                    message: "You cannot delete this expense"
+                });
+            }
+
+            res.status(200).json({
+                message: "Expense deleted successfully"
             });
         }
-
-        res.status(200).json({
-            message: "Expense deleted successfully"
-        });
-    });
+    );
 });
 
-
-// ==================== SERVER ====================
 
 app.listen(3000, () => {
     console.log("Server running on port 3000");
