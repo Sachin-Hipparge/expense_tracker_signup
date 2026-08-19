@@ -1,11 +1,15 @@
 const express = require("express");
 const cors = require("cors");
+const bcrypt = require("bcrypt");
 const db = require("./utils/database");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+
+// ==================== SIGNUP ====================
 
 app.post("/user/signup", (req, res) => {
 
@@ -28,28 +32,43 @@ app.post("/user/signup", (req, res) => {
             });
         }
 
-        const insertSql =
-            "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
+        // Hash the password before storing it
+        bcrypt.hash(password, 10, (err, hash) => {
 
-        db.execute(
-            insertSql,
-            [name, email, password],
-            (err, result) => {
-
-                if (err) {
-                    console.log(err);
-                    return res.status(500).json({
-                        message: "Something went wrong"
-                    });
-                }
-
-                res.status(201).json({
-                    message: "User created successfully"
+            if (err) {
+                console.log(err);
+                return res.status(500).json({
+                    message: "Something went wrong"
                 });
             }
-        );
+
+            const insertSql =
+                "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
+
+            db.execute(
+                insertSql,
+                [name, email, hash],
+                (err, result) => {
+
+                    if (err) {
+                        console.log(err);
+                        return res.status(500).json({
+                            message: "Something went wrong"
+                        });
+                    }
+
+                    res.status(201).json({
+                        message: "User created successfully"
+                    });
+                }
+            );
+        });
     });
 });
+
+
+// ==================== LOGIN ====================
+
 app.post("/user/login", (req, res) => {
 
     const { email, password } = req.body;
@@ -65,7 +84,7 @@ app.post("/user/login", (req, res) => {
             });
         }
 
-        // Email not found
+        // Email does not exist
         if (results.length === 0) {
             return res.status(401).json({
                 message: "Invalid email"
@@ -74,19 +93,29 @@ app.post("/user/login", (req, res) => {
 
         const user = results[0];
 
-        // Password doesn't match
-        if (user.password !== password) {
-            return res.status(401).json({
-                message: "Incorrect password"
-            });
-        }
+        // Compare entered password with hashed password
+        bcrypt.compare(password, user.password, (err, result) => {
 
-        // Email and password match
-        res.status(200).json({
-            message: "Login successful"
+            if (err) {
+                console.log(err);
+                return res.status(500).json({
+                    message: "Something went wrong"
+                });
+            }
+
+            if (!result) {
+                return res.status(401).json({
+                    message: "Incorrect password"
+                });
+            }
+
+            res.status(200).json({
+                message: "Login successful"
+            });
         });
     });
 });
+
 
 app.listen(3000, () => {
     console.log("Server running on port 3000");
