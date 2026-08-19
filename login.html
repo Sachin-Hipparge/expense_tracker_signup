@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Expense Tracker</title>
+</head>
+
+<body>
+
+    <h2>Login</h2>
+
+    <form onsubmit="login(event)">
+
+        <label>Enter your email:</label>
+        <input type="email" id="email" required>
+
+        <br><br>
+
+        <label>Enter your password:</label>
+        <input type="password" id="password" required>
+
+        <br><br>
+
+        <button type="submit">Login</button>
+
+    </form>
+
+    <br>
+
+    <button onclick="goToSignup()">New User - Signup</button>
+
+    <p id="message"></p>
+
+    <script>
+
+        async function login(event) {
+
+            event.preventDefault();
+
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+
+            const loginDetails = {
+                email: email,
+                password: password
+            };
+
+            try {
+
+                const response = await fetch("http://localhost:3000/user/login", {
+
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify(loginDetails)
+
+                });
+
+                const data = await response.json();
+
+                document.getElementById("message").innerText =
+                    data.message;
+
+            } catch (error) {
+
+                document.getElementById("message").innerText =
+                    "Error: " + error.message;
+
+            }
+        }
+
+        function goToSignup() {
+            window.location.href = "signup.html";
+        }
+
+    </script>
+
+</body>
+</html>
