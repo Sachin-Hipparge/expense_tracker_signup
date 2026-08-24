@@ -1,52 +1,93 @@
 const db = require("../utils/database");
+const { categorizeExpense } = require("../services/aiService");
 
-function addExpense(req, res) {
-    const { amount, description, category } = req.body;
+async function addExpense(req, res) {
+
+    const { amount, description } = req.body;
+
     const userId = req.userId;
 
-    const sql = `
-        INSERT INTO expenses
-        (amount, description, category, userId)
-        VALUES (?, ?, ?, ?)
-    `;
+    try {
 
-    db.execute(
-        sql,
-        [amount, description, category, userId],
-        (err) => {
-            if (err) {
-                console.log(err);
-                return res.status(500).json({
-                    message: "Failed to add expense"
-                });
-            }
+        // Ask Gemini to categorize the expense
 
-            const updateTotalExpense = `
-                UPDATE users
-                SET totalExpense = totalExpense + ?
-                WHERE id = ?
-            `;
+        const category =
+            await categorizeExpense(description);
 
-            db.execute(
-                updateTotalExpense,
-                [amount, userId],
-                (err) => {
-                    if (err) {
-                        console.log(err);
-                        return res.status(500).json({
-                            message: "Expense added but total expense update failed"
-                        });
-                    }
 
-                    res.status(201).json({
-                        message: "Expense added successfully"
+        // Save expense
+
+        const sql = `
+            INSERT INTO expenses
+            (amount, description, category, userId)
+            VALUES (?, ?, ?, ?)
+        `;
+
+
+        db.execute(
+            sql,
+            [amount, description, category, userId],
+            (err) => {
+
+                if (err) {
+
+                    console.log(err);
+
+                    return res.status(500).json({
+                        message: "Failed to add expense"
                     });
-                }
-            );
-        }
-    );
-}
 
+                }
+
+
+                // Update total expense
+
+                const updateTotalExpense = `
+                    UPDATE users
+                    SET totalExpense = totalExpense + ?
+                    WHERE id = ?
+                `;
+
+
+                db.execute(
+                    updateTotalExpense,
+                    [amount, userId],
+                    (err) => {
+
+                        if (err) {
+
+                            console.log(err);
+
+                            return res.status(500).json({
+                                message:
+                                    "Expense added but total expense update failed"
+                            });
+
+                        }
+
+
+                        res.status(201).json({
+                            message: "Expense added successfully",
+                            category: category
+                        });
+
+                    }
+                );
+
+            }
+        );
+
+    } catch (error) {
+
+        console.log("Gemini error:", error);
+
+        res.status(500).json({
+            message: "Could not categorize expense"
+        });
+
+    }
+
+}
 function getExpenses(req, res) {
     const userId = req.userId;
 

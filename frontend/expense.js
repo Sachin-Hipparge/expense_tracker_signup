@@ -171,17 +171,11 @@ async function addExpense(event) {
     const description =
         document.getElementById("description").value;
 
-    const category =
-        document.getElementById("category").value;
-
-
     const expenseDetails = {
 
         amount: amount,
 
-        description: description,
-
-        category: category
+        description: description
 
     };
 
@@ -404,7 +398,7 @@ async function showLeaderboard() {
     try {
 
         const response = await fetch(
-            "http://localhost:3000/user/leaderboard",
+            "http://localhost:3000/leaderboard",
             {
                 method: "GET",
 

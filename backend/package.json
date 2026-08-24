@@ -18,6 +18,7 @@
   "homepage": "https://github.com/Sachin-Hipparge/expense_tracker_signup#readme",
   "description": "",
   "dependencies": {
+    "@google/genai": "^2.18.0",
     "bcrypt": "^6.0.0",
     "cashfree-pg": "^6.0.5",
     "cors": "^2.8.6",
