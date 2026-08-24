@@ -209,19 +209,16 @@ router.get("/leaderboard", authenticate, (req, res) => {
 
     const leaderboardQuery = `
         SELECT
-            users.id,
-            users.name,
-            SUM(expenses.amount) AS totalExpense
+            id,
+            name,
+            totalExpense
         FROM users
-        INNER JOIN expenses
-            ON users.id = expenses.userId
         WHERE EXISTS (
             SELECT 1
             FROM users AS currentUser
             WHERE currentUser.id = ?
             AND currentUser.isPremium = true
         )
-        GROUP BY users.id, users.name
         ORDER BY totalExpense DESC
     `;
 
@@ -231,11 +228,13 @@ router.get("/leaderboard", authenticate, (req, res) => {
         (err, results) => {
 
             if (err) {
+
                 console.log(err);
 
                 return res.status(500).json({
                     message: "Database error"
                 });
+
             }
 
             res.status(200).json(results);

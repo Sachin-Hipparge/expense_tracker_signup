@@ -15,6 +15,8 @@ router.post("/add", authenticate, (req, res) => {
     const userId = req.userId;
 
 
+    // 1. Add expense to expenses table
+
     const sql = `
         INSERT INTO expenses
         (amount, description, category, userId)
@@ -38,15 +40,44 @@ router.post("/add", authenticate, (req, res) => {
             }
 
 
-            res.status(201).json({
-                message: "Expense added successfully"
-            });
+            // 2. Update user's totalExpense
+
+            const updateTotalExpense = `
+                UPDATE users
+                SET totalExpense = totalExpense + ?
+                WHERE id = ?
+            `;
+
+
+            db.execute(
+                updateTotalExpense,
+                [amount, userId],
+                (err) => {
+
+                    if (err) {
+
+                        console.log(err);
+
+                        return res.status(500).json({
+                            message: "Expense added but total expense update failed"
+                        });
+
+                    }
+
+
+                    // 3. Everything successful
+
+                    res.status(201).json({
+                        message: "Expense added successfully"
+                    });
+
+                }
+            );
 
         }
     );
 
 });
-
 
 // ==================== GET EXPENSES ====================
 
@@ -88,33 +119,35 @@ router.get("/all", authenticate, (req, res) => {
 router.delete("/delete/:id", authenticate, (req, res) => {
 
     const expenseId = req.params.id;
-
     const userId = req.userId;
 
 
-    const sql = `
-        DELETE FROM expenses
+    // 1. First get the expense amount
+
+    const getExpense = `
+        SELECT amount
+        FROM expenses
         WHERE id = ? AND userId = ?
     `;
 
 
     db.execute(
-        sql,
+        getExpense,
         [expenseId, userId],
-        (err, result) => {
+        (err, results) => {
 
             if (err) {
 
                 console.log(err);
 
                 return res.status(500).json({
-                    message: "Failed to delete expense"
+                    message: "Failed to find expense"
                 });
 
             }
 
 
-            if (result.affectedRows === 0) {
+            if (results.length === 0) {
 
                 return res.status(403).json({
                     message: "You cannot delete this expense"
@@ -123,14 +156,73 @@ router.delete("/delete/:id", authenticate, (req, res) => {
             }
 
 
-            res.status(200).json({
-                message: "Expense deleted successfully"
-            });
+            const amount = results[0].amount;
+
+
+            // 2. Delete the expense
+
+            const deleteExpense = `
+                DELETE FROM expenses
+                WHERE id = ? AND userId = ?
+            `;
+
+
+            db.execute(
+                deleteExpense,
+                [expenseId, userId],
+                (err, result) => {
+
+                    if (err) {
+
+                        console.log(err);
+
+                        return res.status(500).json({
+                            message: "Failed to delete expense"
+                        });
+
+                    }
+
+
+                    // 3. Reduce totalExpense
+
+                    const updateTotalExpense = `
+                        UPDATE users
+                        SET totalExpense = totalExpense - ?
+                        WHERE id = ?
+                    `;
+
+
+                    db.execute(
+                        updateTotalExpense,
+                        [amount, userId],
+                        (err) => {
+
+                            if (err) {
+
+                                console.log(err);
+
+                                return res.status(500).json({
+                                    message: "Expense deleted but total expense update failed"
+                                });
+
+                            }
+
+
+                            // 4. Everything successful
+
+                            res.status(200).json({
+                                message: "Expense deleted successfully"
+                            });
+
+                        }
+                    );
+
+                }
+            );
 
         }
     );
 
 });
-
 
 module.exports = router;
