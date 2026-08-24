@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 
 const db = require("../utils/database");
 const { JWT_SECRET } = require("../middleware/authMiddleware");
+const { authenticate } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -170,5 +171,115 @@ router.post("/login", (req, res) => {
 
 });
 
+router.get("/premium-status", authenticate, (req, res) => {
+
+    const userId = req.userId;
+
+    const sql = `
+        SELECT isPremium
+        FROM users
+        WHERE id = ?
+    `;
+
+    db.execute(sql, [userId], (err, results) => {
+
+        if (err) {
+            return res.status(500).json({
+                message: "Database error"
+            });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({
+                message: "User not found"
+            });
+        }
+
+        res.status(200).json({
+            isPremium: results[0].isPremium
+        });
+
+    });
+
+});
+
+router.get("/leaderboard", authenticate, (req, res) => {
+
+    const userId = req.userId;
+
+    // First check whether the user is premium
+
+    const premiumQuery = `
+        SELECT isPremium
+        FROM users
+        WHERE id = ?
+    `;
+
+    db.execute(
+        premiumQuery,
+        [userId],
+        (err, userResults) => {
+
+            if (err) {
+                console.log(err);
+
+                return res.status(500).json({
+                    message: "Database error"
+                });
+            }
+
+            if (userResults.length === 0) {
+
+                return res.status(404).json({
+                    message: "User not found"
+                });
+
+            }
+
+            // User is not premium
+
+            if (!userResults[0].isPremium) {
+
+                return res.status(403).json({
+                    message: "Premium membership required"
+                });
+
+            }
+
+            // User is premium → get leaderboard
+
+            const leaderboardQuery = `
+                SELECT
+                    users.id,
+                    users.name,
+                    SUM(expenses.amount) AS totalExpense
+                FROM users
+                INNER JOIN expenses
+                    ON users.id = expenses.userId
+                GROUP BY users.id, users.name
+                ORDER BY totalExpense DESC
+            `;
+
+            db.execute(
+                leaderboardQuery,
+                (err, results) => {
+
+                    if (err) {
+                        console.log(err);
+
+                        return res.status(500).json({
+                            message: "Database error"
+                        });
+                    }
+
+                    res.status(200).json(results);
+
+                }
+            );
+
+        }
+    );
+
+});
 
 module.exports = router;
