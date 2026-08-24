@@ -5,6 +5,7 @@ const cors = require("cors");
 const userRoutes = require("./routes/userRoutes");
 const expenseRoutes = require("./routes/expenseRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const leaderboardRoutes = require("./routes/leaderboardRoutes");
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use(express.json());
 // Routes
 
 app.use("/user", userRoutes);
+app.use("/leaderboard", leaderboardRoutes);
 
 app.use("/expense", expenseRoutes);
 
