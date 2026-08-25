@@ -4,183 +4,189 @@ const { categorizeExpense } = require("../services/aiService");
 async function addExpense(req, res) {
 
     const { amount, description } = req.body;
-
     const userId = req.userId;
 
     try {
 
-        // Ask Gemini to categorize the expense
+        const category = await categorizeExpense(description);
 
-        const category =
-            await categorizeExpense(description);
+        await db.beginTransaction();
 
-
-        // Save expense
-
-        const sql = `
+        const insertSql = `
             INSERT INTO expenses
             (amount, description, category, userId)
             VALUES (?, ?, ?, ?)
         `;
 
-
-        db.execute(
-            sql,
-            [amount, description, category, userId],
-            (err) => {
-
-                if (err) {
-
-                    console.log(err);
-
-                    return res.status(500).json({
-                        message: "Failed to add expense"
-                    });
-
-                }
-
-
-                // Update total expense
-
-                const updateTotalExpense = `
-                    UPDATE users
-                    SET totalExpense = totalExpense + ?
-                    WHERE id = ?
-                `;
-
-
-                db.execute(
-                    updateTotalExpense,
-                    [amount, userId],
-                    (err) => {
-
-                        if (err) {
-
-                            console.log(err);
-
-                            return res.status(500).json({
-                                message:
-                                    "Expense added but total expense update failed"
-                            });
-
-                        }
-
-
-                        res.status(201).json({
-                            message: "Expense added successfully",
-                            category: category
-                        });
-
-                    }
-                );
-
-            }
+        await db.execute(
+            insertSql,
+            [amount, description, category, userId]
         );
+
+        const updateSql = `
+            UPDATE users
+            SET totalExpense = totalExpense + ?
+            WHERE id = ?
+        `;
+
+        await db.execute(
+            updateSql,
+            [amount, userId]
+        );
+
+        await db.commit();
+
+        res.status(201).json({
+            message: "Expense added successfully",
+            category: category
+        });
 
     } catch (error) {
 
-        console.log("Gemini error:", error);
+        console.log("Add expense error:", error);
+
+        try {
+            await db.rollback();
+        } catch (rollbackError) {
+            console.log("Rollback error:", rollbackError);
+        }
 
         res.status(500).json({
-            message: "Could not categorize expense"
+            message: "Failed to add expense"
+        });
+    }
+}
+
+async function getExpenses(req, res) {
+
+    const userId = req.userId;
+
+    try {
+
+        const sql = `
+            SELECT *
+            FROM expenses
+            WHERE userId = ?
+            ORDER BY id DESC
+        `;
+
+        const [results] =
+            await db.execute(sql, [userId]);
+
+
+        res.status(200).json(results);
+
+
+    } catch (error) {
+
+        console.log("Get expenses error:", error);
+
+        res.status(500).json({
+            message: "Failed to fetch expenses"
         });
 
     }
 
 }
-function getExpenses(req, res) {
-    const userId = req.userId;
 
-    const sql = `
-        SELECT *
-        FROM expenses
-        WHERE userId = ?
-        ORDER BY id DESC
-    `;
+async function deleteExpense(req, res) {
 
-    db.execute(sql, [userId], (err, results) => {
-        if (err) {
-            console.log(err);
-            return res.status(500).json({
-                message: "Failed to fetch expenses"
-            });
-        }
-
-        res.status(200).json(results);
-    });
-}
-
-function deleteExpense(req, res) {
     const expenseId = req.params.id;
     const userId = req.userId;
 
-    const getExpense = `
-        SELECT amount
-        FROM expenses
-        WHERE id = ? AND userId = ?
-    `;
+    try {
 
-    db.execute(
-        getExpense,
-        [expenseId, userId],
-        (err, results) => {
-            if (err) {
-                console.log(err);
-                return res.status(500).json({
-                    message: "Failed to find expense"
-                });
-            }
+        // Start transaction
 
-            if (results.length === 0) {
-                return res.status(403).json({
-                    message: "You cannot delete this expense"
-                });
-            }
+        await db.beginTransaction();
 
-            const amount = results[0].amount;
 
-            const deleteSql = `
-                DELETE FROM expenses
-                WHERE id = ? AND userId = ?
-            `;
+        // 1. Get the expense amount
 
-            db.execute(
-                deleteSql,
-                [expenseId, userId],
-                (err) => {
-                    if (err) {
-                        console.log(err);
-                        return res.status(500).json({
-                            message: "Failed to delete expense"
-                        });
-                    }
+        const getExpense = `
+            SELECT amount
+            FROM expenses
+            WHERE id = ? AND userId = ?
+        `;
 
-                    const updateTotalExpense = `
-                        UPDATE users
-                        SET totalExpense = totalExpense - ?
-                        WHERE id = ?
-                    `;
-
-                    db.execute(
-                        updateTotalExpense,
-                        [amount, userId],
-                        (err) => {
-                            if (err) {
-                                console.log(err);
-                                return res.status(500).json({
-                                    message: "Expense deleted but total expense update failed"
-                                });
-                            }
-
-                            res.status(200).json({
-                                message: "Expense deleted successfully"
-                            });
-                        }
-                    );
-                }
+        const [results] =
+            await db.execute(
+                getExpense,
+                [expenseId, userId]
             );
+
+
+        if (results.length === 0) {
+
+            await db.rollback();
+
+            return res.status(403).json({
+                message: "You cannot delete this expense"
+            });
+
         }
-    );
+
+
+        const amount = results[0].amount;
+
+
+        // 2. Delete expense
+
+        const deleteSql = `
+            DELETE FROM expenses
+            WHERE id = ? AND userId = ?
+        `;
+
+        await db.execute(
+            deleteSql,
+            [expenseId, userId]
+        );
+
+
+        // 3. Reduce totalExpense
+
+        const updateTotalExpense = `
+            UPDATE users
+            SET totalExpense = totalExpense - ?
+            WHERE id = ?
+        `;
+
+        await db.execute(
+            updateTotalExpense,
+            [amount, userId]
+        );
+
+
+        // 4. Everything succeeded
+
+        await db.commit();
+
+
+        res.status(200).json({
+            message: "Expense deleted successfully"
+        });
+
+
+    } catch (error) {
+
+        console.log("Delete expense error:", error);
+
+
+        // Something failed → undo everything
+
+        try {
+            await db.rollback();
+        } catch (rollbackError) {
+            console.log("Rollback error:", rollbackError);
+        }
+
+
+        res.status(500).json({
+            message: "Failed to delete expense"
+        });
+
+    }
+
 }
 
 module.exports = {

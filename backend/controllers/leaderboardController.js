@@ -1,38 +1,49 @@
 const db = require("../utils/database");
 
-function getLeaderboard(req, res) {
+async function getLeaderboard(req, res) {
+
     const userId = req.userId;
 
-    const leaderboardQuery = `
-        SELECT
-            id,
-            name,
-            totalExpense
-        FROM users
-        WHERE EXISTS (
-            SELECT 1
-            FROM users AS currentUser
-            WHERE currentUser.id = ?
-            AND currentUser.isPremium = true
-        )
-        ORDER BY totalExpense DESC
-    `;
+    try {
 
-    db.execute(
-        leaderboardQuery,
-        [userId],
-        (err, results) => {
-            if (err) {
-                console.log(err);
+        const leaderboardQuery = `
+            SELECT
+                id,
+                name,
+                totalExpense
+            FROM users
+            WHERE EXISTS (
+                SELECT 1
+                FROM users AS currentUser
+                WHERE currentUser.id = ?
+                AND currentUser.isPremium = true
+            )
+            ORDER BY totalExpense DESC
+        `;
 
-                return res.status(500).json({
-                    message: "Database error"
-                });
-            }
+        const [results] =
+            await db.execute(
+                leaderboardQuery,
+                [userId]
+            );
 
-            res.status(200).json(results);
-        }
-    );
+
+        res.status(200).json(results);
+
+
+    } catch (error) {
+
+        console.log(
+            "Leaderboard error:",
+            error
+        );
+
+        res.status(500).json({
+            message: "Database error"
+        });
+
+    }
+
 }
 
 module.exports = {
