@@ -76,3 +76,62 @@ async function login(event) {
     }
 
 }
+
+const forgotPasswordBtn =
+    document.getElementById("forgotPasswordBtn");
+
+const forgotPasswordForm =
+    document.getElementById("forgotPasswordForm");
+
+const sendResetEmailBtn =
+    document.getElementById("sendResetEmailBtn");
+
+const forgotEmail =
+    document.getElementById("forgotEmail");
+
+const forgotMessage =
+    document.getElementById("forgotMessage");
+
+
+forgotPasswordBtn.addEventListener("click", () => {
+
+    forgotPasswordForm.style.display = "block";
+
+});
+
+
+sendResetEmailBtn.addEventListener("click", async () => {
+
+    const email = forgotEmail.value;
+
+    if (!email) {
+
+        forgotMessage.innerText =
+            "Please enter your email";
+
+        return;
+    }
+
+    try {
+
+        const response = await axios.post(
+            "http://localhost:3000/password/forgotpassword",
+            {
+                email: email
+            }
+        );
+
+        forgotMessage.innerText =
+            response.data.message;
+
+    } catch (error) {
+
+        console.log(error);
+
+        forgotMessage.innerText =
+            error.response?.data?.message ||
+            "Could not send email";
+
+    }
+
+});

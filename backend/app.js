@@ -6,6 +6,7 @@ const userRoutes = require("./routes/userRoutes");
 const expenseRoutes = require("./routes/expenseRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const leaderboardRoutes = require("./routes/leaderboardRoutes");
+const passwordRoutes = require("./routes/passwordRoutes");
 
 const app = express();
 
@@ -21,10 +22,9 @@ app.use(express.json());
 
 app.use("/user", userRoutes);
 app.use("/leaderboard", leaderboardRoutes);
-
 app.use("/expense", expenseRoutes);
-
 app.use("/purchase", paymentRoutes);
+app.use("/password", passwordRoutes);
 
 
 // Start server

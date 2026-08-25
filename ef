@@ -1,0 +1,13 @@
+[33ma63c773[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m we replaced all callback functions with async await in the controller logics
+[33m2245cf0[m integrated gemini ai for categorising the expenses
+[33mb788a79[m changed project structure like logic written in controller
+[33m42a1d9c[m optimised leaderboard file
+[33mab49932[m optimised premium feature using joins
+[33me485957[m added premium features for premium users like leaderboard
+[33med28906[m Implement Cashfree premium membership
+[33m8ae3343[m added authentication as jwt
+[33m20fdaa7[m created expense page when we enter expense it will get store into the database
+[33mba430eb[m enrypted the password using bcrypt hash
+[33m15dfba5[m created user login page and connected with it database
+[33m7e1f848[m connected frontend with backend the data entered by the user now it will be stored in the database
+[33m68d5327[m created expense tracker signup page
