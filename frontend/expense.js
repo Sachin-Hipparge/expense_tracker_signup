@@ -232,18 +232,23 @@ async function addExpense(event) {
 
 
     const amount =
-        document.getElementById("amount").value;
+    document.getElementById("amount").value;
 
-    const description =
-        document.getElementById("description").value;
+const description =
+    document.getElementById("description").value;
 
-    const expenseDetails = {
+const note =
+    document.getElementById("note").value;
 
-        amount: amount,
+const expenseDetails = {
 
-        description: description
+    amount: amount,
 
-    };
+    description: description,
+
+    note: note
+
+};
 
 
     try {
@@ -383,6 +388,8 @@ function displayExpenses() {
             <td>${expense.amount}</td>
 
             <td>${expense.description}</td>
+
+            <td>${expense.note || ""}</td>
 
             <td>${expense.category}</td>
 

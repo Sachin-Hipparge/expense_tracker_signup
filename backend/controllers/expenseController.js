@@ -3,24 +3,24 @@ const { categorizeExpense } = require("../services/aiService");
 
 async function addExpense(req, res) {
 
-    const { amount, description } = req.body;
+    const { amount, description, note } = req.body;
     const userId = req.userId;
 
     try {
 
-        const category = await categorizeExpense(description);
+        const category = "Other";
 
         await db.beginTransaction();
 
         const insertSql = `
             INSERT INTO expenses
-            (amount, description, category, userId)
-            VALUES (?, ?, ?, ?)
+            (amount, description, category, userId, note)
+            VALUES (?, ?, ?, ?, ?)
         `;
 
         await db.execute(
             insertSql,
-            [amount, description, category, userId]
+            [amount, description, category, userId, note]
         );
 
         const updateSql = `
