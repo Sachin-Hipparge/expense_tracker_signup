@@ -114,24 +114,41 @@ sendResetEmailBtn.addEventListener("click", async () => {
 
     try {
 
-        const response = await axios.post(
+        const response = await fetch(
             "http://localhost:3000/password/forgotpassword",
             {
-                email: email
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    email: email
+                })
             }
         );
 
-        forgotMessage.innerText =
-            response.data.message;
+        const data = await response.json();
+
+        if (response.ok) {
+
+            forgotMessage.innerText =
+                data.message;
+
+        } else {
+
+            forgotMessage.innerText =
+                data.message;
+
+        }
 
     } catch (error) {
 
         console.log(error);
 
         forgotMessage.innerText =
-            error.response?.data?.message ||
             "Could not send email";
-
     }
 
 });
