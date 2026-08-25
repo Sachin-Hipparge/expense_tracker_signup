@@ -1,4 +1,7 @@
 const token = localStorage.getItem("token");
+let allExpenses = [];
+const downloadReportButton =
+    document.getElementById("downloadReportButton");
 
 async function checkPremiumStatus() {
 
@@ -15,7 +18,9 @@ async function checkPremiumStatus() {
             }
         );
 
-        const data = await response.json();
+       const data = await response.json();
+
+
 
         if (response.ok && data.isPremium) {
 
@@ -24,6 +29,8 @@ async function checkPremiumStatus() {
 
             document.getElementById("leaderboardButton").style.display =
                 "block";
+
+              downloadReportButton.disabled = false;
 
         }
 
@@ -255,6 +262,7 @@ async function getExpenses() {
 
 
         const data = await response.json();
+        allExpenses = Array.isArray(data) ? data : [];
 
 
         if (!response.ok) {
@@ -443,4 +451,207 @@ async function showLeaderboard() {
 
     }
 
+}
+
+document
+    .getElementById("dailyReportButton")
+    .addEventListener("click", () => {
+        showReport("daily");
+    });
+
+document
+    .getElementById("weeklyReportButton")
+    .addEventListener("click", () => {
+        showReport("weekly");
+    });
+
+document
+    .getElementById("monthlyReportButton")
+    .addEventListener("click", () => {
+        showReport("monthly");
+    });
+
+    function showReport(type) {
+        console.log("All expenses:", allExpenses);
+console.log("Today:", new Date().toString());
+
+    const today = new Date();
+
+    let filteredExpenses = [];
+
+    if (type === "daily") {
+
+    filteredExpenses = allExpenses.filter(expense => {
+
+        const expenseDate =
+            new Date(expense.createdAt);
+
+            console.log(
+    "Expense date:",
+    new Date(expense.createdAt).toString()
+);
+
+        return (
+            expenseDate.toDateString() ===
+            today.toDateString()
+        );
+
+    });
+
+}
+
+
+    if (type === "weekly") {
+
+        const sevenDaysAgo = new Date();
+
+        sevenDaysAgo.setDate(
+            today.getDate() - 7
+        );
+
+        filteredExpenses = allExpenses.filter(expense => {
+
+            const expenseDate =
+                new Date(expense.createdAt);
+
+            return expenseDate >= sevenDaysAgo;
+
+        });
+
+    }
+
+
+    if (type === "monthly") {
+
+        filteredExpenses = allExpenses.filter(expense => {
+
+            const expenseDate =
+                new Date(expense.createdAt);
+
+            return (
+                expenseDate.getMonth() === today.getMonth() &&
+                expenseDate.getFullYear() === today.getFullYear()
+            );
+
+        });
+
+    }
+
+
+    displayReport(filteredExpenses, type);
+
+}
+
+function displayReport(expenses, type) {
+
+    const report =
+        document.getElementById("report");
+
+    report.innerHTML = "";
+
+
+    const heading =
+        document.createElement("h3");
+
+    heading.innerText =
+        type.charAt(0).toUpperCase() +
+        type.slice(1) +
+        " Expense Report";
+
+    report.appendChild(heading);
+
+
+    if (expenses.length === 0) {
+
+        const message =
+            document.createElement("p");
+
+        message.innerText =
+            "No expenses found for this period.";
+
+        report.appendChild(message);
+
+        return;
+    }
+
+
+    let total = 0;
+
+
+    expenses.forEach(expense => {
+
+        total += Number(expense.amount);
+
+
+        const item =
+            document.createElement("p");
+
+        item.innerText =
+            `${expense.description} - ₹${expense.amount} - ${expense.category}`;
+
+        report.appendChild(item);
+
+    });
+
+
+    const totalElement =
+        document.createElement("h3");
+
+    totalElement.innerText =
+        `Total Expense: ₹${total}`;
+
+    report.appendChild(totalElement);
+
+}
+
+downloadReportButton.addEventListener(
+    "click",
+    downloadReport
+);
+
+
+// download report
+
+function downloadReport() {
+
+    if (!allExpenses.length) {
+
+        alert("No expenses available to download");
+
+        return;
+    }
+
+    let csvContent =
+        "ID,Amount,Description,Category,Date\n";
+
+    allExpenses.forEach(expense => {
+
+        csvContent +=
+            `${expense.id},` +
+            `${expense.amount},` +
+            `"${expense.description}",` +
+            `${expense.category},` +
+            `${expense.createdAt}\n`;
+
+    });
+
+    const blob = new Blob(
+        [csvContent],
+        { type: "text/csv" }
+    );
+
+    const url =
+        URL.createObjectURL(blob);
+
+    const link =
+        document.createElement("a");
+
+    link.href = url;
+
+    link.download =
+        "expense-report.csv";
+
+    link.click();
+
+    URL.revokeObjectURL(url);
 }
