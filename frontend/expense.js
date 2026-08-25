@@ -1,5 +1,28 @@
 const token = localStorage.getItem("token");
 let allExpenses = [];
+let currentPage = 1;
+
+const expensesPerPage = 10;
+
+const previousButton =
+    document.getElementById("previousButton");
+
+const nextButton =
+    document.getElementById("nextButton");
+
+const pageNumber =
+    document.getElementById("pageNumber");
+
+    previousButton.addEventListener(
+    "click",
+    previousPage
+);
+
+nextButton.addEventListener(
+    "click",
+    nextPage
+);
+
 const downloadReportButton =
     document.getElementById("downloadReportButton");
 
@@ -275,46 +298,7 @@ async function getExpenses() {
         }
 
 
-        const expenseList =
-            document.getElementById("expenseList");
-
-
-        expenseList.innerHTML = "";
-
-
-        data.forEach(expense => {
-
-            const row =
-                document.createElement("tr");
-
-
-            row.innerHTML = `
-
-                <td>${expense.id}</td>
-
-                <td>${expense.amount}</td>
-
-                <td>${expense.description}</td>
-
-                <td>${expense.category}</td>
-
-                <td>
-
-                    <button
-                        onclick="deleteExpense(${expense.id})">
-
-                        Delete
-
-                    </button>
-
-                </td>
-
-            `;
-
-
-            expenseList.appendChild(row);
-
-        });
+        displayExpenses();
 
 
     } catch (error) {
@@ -326,6 +310,125 @@ async function getExpenses() {
 
 }
 
+// ==================== DISPLAY EXPENSES ====================
+
+function displayExpenses() {
+
+    const expenseList =
+        document.getElementById("expenseList");
+
+    expenseList.innerHTML = "";
+
+
+    const startIndex =
+        (currentPage - 1) * expensesPerPage;
+
+    const endIndex =
+        startIndex + expensesPerPage;
+
+
+    const expensesToDisplay =
+        allExpenses.slice(
+            startIndex,
+            endIndex
+        );
+
+
+    expensesToDisplay.forEach(expense => {
+
+        const row =
+            document.createElement("tr");
+
+
+        row.innerHTML = `
+
+            <td>${expense.id}</td>
+
+            <td>${expense.amount}</td>
+
+            <td>${expense.description}</td>
+
+            <td>${expense.category}</td>
+
+            <td>
+
+                <button
+                    onclick="deleteExpense(${expense.id})">
+
+                    Delete
+
+                </button>
+
+            </td>
+
+        `;
+
+
+        expenseList.appendChild(row);
+
+    });
+
+
+    updatePagination();
+
+}
+// ==================== UPDATE PAGINATION ====================
+
+function updatePagination() {
+
+    const totalPages =
+        Math.ceil(
+            allExpenses.length / expensesPerPage
+        );
+
+
+    pageNumber.innerText =
+        `Page ${currentPage} of ${totalPages}`;
+
+
+    previousButton.disabled =
+        currentPage === 1;
+
+
+    nextButton.disabled =
+        currentPage === totalPages;
+
+}
+
+// ==================== NEXT PAGE ====================
+
+function nextPage() {
+
+    const totalPages =
+        Math.ceil(
+            allExpenses.length / expensesPerPage
+        );
+
+
+    if (currentPage < totalPages) {
+
+        currentPage++;
+
+        displayExpenses();
+
+    }
+
+}
+
+
+// ==================== PREVIOUS PAGE ====================
+
+function previousPage() {
+
+    if (currentPage > 1) {
+
+        currentPage--;
+
+        displayExpenses();
+
+    }
+
+}
 
 // ==================== DELETE EXPENSE ====================
 
