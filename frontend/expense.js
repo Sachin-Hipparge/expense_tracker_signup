@@ -1,8 +1,17 @@
 const token = localStorage.getItem("token");
 let allExpenses = [];
-let currentPage = 1;
 
-const expensesPerPage = 10;
+
+
+let currentPage = 1;
+let expensesPerPage =
+    Number(localStorage.getItem("expensesPerPage")) || 10;
+
+    const expensesPerPageSelect =
+    document.getElementById("expensesPerPage");
+
+expensesPerPageSelect.value =
+    expensesPerPage;
 
 const previousButton =
     document.getElementById("previousButton");
@@ -22,6 +31,33 @@ nextButton.addEventListener(
     "click",
     nextPage
 );
+
+document
+    .getElementById("expensesPerPage")
+    .addEventListener(
+        "change",
+        changeExpensesPerPage
+    );
+
+    // changes expenseper page
+
+    function changeExpensesPerPage() {
+
+    const select =
+        document.getElementById("expensesPerPage");
+
+    expensesPerPage =
+        Number(select.value);
+
+    localStorage.setItem(
+        "expensesPerPage",
+        expensesPerPage
+    );
+
+    currentPage = 1;
+
+    displayExpenses();
+}
 
 const downloadReportButton =
     document.getElementById("downloadReportButton");
@@ -377,9 +413,12 @@ function displayExpenses() {
 function updatePagination() {
 
     const totalPages =
+    Math.max(
+        1,
         Math.ceil(
             allExpenses.length / expensesPerPage
-        );
+        )
+    );
 
 
     pageNumber.innerText =
