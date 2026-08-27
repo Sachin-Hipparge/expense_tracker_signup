@@ -8,7 +8,7 @@ async function addExpense(req, res) {
 
     try {
 
-        const category = "Other";
+        const category = await categorizeExpense(description);
 
         await db.beginTransaction();
 

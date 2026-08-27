@@ -82,7 +82,7 @@ async function forgotPassword(req, res) {
         // 4. Create reset URL
 
         const resetUrl =
-            `http://localhost:3000/password/resetpassword/${requestId}`;
+    `${process.env.FRONTEND_URL}/reset-password.html?id=${requestId}`;
 
 
         console.log(

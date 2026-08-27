@@ -1,3 +1,5 @@
+
+const API_URL = "http://localhost:3000";
 const token = localStorage.getItem("token");
 let allExpenses = [];
 
@@ -67,7 +69,7 @@ async function checkPremiumStatus() {
     try {
 
         const response = await fetch(
-            "http://localhost:3000/user/premium-status",
+            `${API_URL}/user/premium-status`,
             {
                 method: "GET",
 
@@ -118,7 +120,7 @@ async function buyPremium() {
     try {
 
         const response = await fetch(
-            "http://localhost:3000/purchase/purchase-premium",
+            `${API_URL}/purchase/purchase-premium`,
             {
                 method: "GET",
 
@@ -164,7 +166,7 @@ async function buyPremium() {
             // Verify payment with backend
 
             const verifyResponse = await fetch(
-                `http://localhost:3000/purchase/verify-payment/${orderId}`,
+                `${API_URL}/purchase/verify-payment/${orderId}`,
                 {
                     method: "GET",
 
@@ -254,7 +256,7 @@ const expenseDetails = {
     try {
 
         const response = await fetch(
-            "http://localhost:3000/expense/add",
+            `${API_URL}/expense/add`,
             {
 
                 method: "POST",
@@ -309,7 +311,7 @@ async function getExpenses() {
     try {
 
         const response = await fetch(
-            "http://localhost:3000/expense/all",
+            `${API_URL}/expense/all`,
             {
 
                 method: "GET",
@@ -483,7 +485,7 @@ async function deleteExpense(id) {
     try {
 
         const response = await fetch(
-            `http://localhost:3000/expense/delete/${id}`,
+            `${API_URL}/expense/delete/${id}`,
             {
 
                 method: "DELETE",
@@ -555,7 +557,7 @@ async function showLeaderboard() {
     try {
 
         const response = await fetch(
-            "http://localhost:3000/leaderboard",
+            `${API_URL}/leaderboard`,
             {
                 method: "GET",
 

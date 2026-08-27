@@ -1,3 +1,6 @@
+
+const API_URL = "http://localhost:3000";
+
 const resetPasswordForm =
     document.getElementById("resetPasswordForm");
 
@@ -52,7 +55,7 @@ resetPasswordForm.addEventListener(
         try {
 
             const response = await fetch(
-                `http://localhost:3000/password/resetpassword/${requestId}`,
+                `${API_URL}/password/resetpassword/${requestId}`,
                 {
 
                     method: "POST",

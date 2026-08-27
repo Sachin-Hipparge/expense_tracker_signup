@@ -1,3 +1,5 @@
+const API_URL = "http://localhost:3000";
+
 const loginForm = document.getElementById("loginForm");
 
 loginForm.addEventListener("submit", login);
@@ -27,7 +29,7 @@ async function login(event) {
     try {
 
         const response = await fetch(
-            "http://localhost:3000/user/login",
+            `${API_URL}/user/login`,
             {
 
                 method: "POST",
@@ -115,7 +117,7 @@ sendResetEmailBtn.addEventListener("click", async () => {
     try {
 
         const response = await fetch(
-            "http://localhost:3000/password/forgotpassword",
+            `${API_URL}/password/forgotpassword`,
             {
                 method: "POST",
 
