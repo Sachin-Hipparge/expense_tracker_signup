@@ -27,7 +27,8 @@
     "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.24.2",
     "sequelize": "^6.37.8",
-    "uuid": "^14.0.2"
+    "sib-api-v3-sdk": "^8.5.0",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "sequelize-cli": "^6.6.5"

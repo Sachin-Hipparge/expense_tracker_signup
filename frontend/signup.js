@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:3000";
+const API_URL = "http://13.200.243.68:3000";
 
 const signupForm = document.getElementById("signupForm");
 
